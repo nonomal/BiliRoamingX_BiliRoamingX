@@ -3,6 +3,10 @@ package app.revanced.bilibili.patches.main;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -10,9 +14,14 @@ import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.AttributeSet;
+import android.util.Base64;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,10 +37,15 @@ import com.bilibili.bplus.im.setting.MessageTipItemActivity;
 import com.bilibili.magicasakura.widgets.TintCheckBox;
 import com.bilibili.magicasakura.widgets.TintRadioButton;
 import com.bilibili.magicasakura.widgets.TintSwitchCompat;
+import com.bilibili.video.story.StoryVideoActivity;
+
+import org.lsposed.hiddenapibypass.HiddenApiBypass;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import app.revanced.bilibili.account.PassportChangeReceiver;
@@ -54,15 +68,17 @@ import tv.danmaku.bili.MainActivityV2;
 public class ApplicationDelegate {
     private static final ArrayDeque<WeakReference<Activity>> activityRefs = new ArrayDeque<>();
     private static final Point screenSize = new Point();
+    public static final Map<String, String> originalSignatures = new HashMap<>();
 
     @Keep
     public static void onCreate(Application app) {
+        long start = System.currentTimeMillis();
         app.registerActivityLifecycleCallbacks(new ActivityLifecycleCallback());
         app.registerComponentCallbacks(new ComponentCallbacks());
         updateBitmapDefaultDensity();
         PassportChangeReceiver.register();
         CustomThemePatch.refresh();
-        Utils.runOnMainThread(500L, CustomThemePatch::delayRefresh);
+        Utils.async(500L, CustomThemePatch::delayRefresh);
         if (Utils.isMainProcess()) {
             Utils.async(ApplicationDelegate::startLog);
             Utils.async(PlaybackSpeedPatch::refreshOverrideSpeedList);
@@ -71,11 +87,89 @@ public class ApplicationDelegate {
             UposReplacer.getBaseUposList();
             PreferenceUpdater.register();
             Themes.registerGarbChangeObserver();
-            Utils.runOnMainThread(500L, () -> Utils.async(BangumiSeasonHook::injectExtraSearchTypes));
-            Utils.runOnMainThread(500L, () -> Utils.async(BangumiSeasonHook::injectExtraSearchTypesV2));
-            Utils.runOnMainThread(2000L, () -> Utils.async(CouponAutoReceiver::check));
+            Utils.async(500L, BangumiSeasonHook::injectExtraSearchTypes);
+            Utils.async(500L, BangumiSeasonHook::injectExtraSearchTypesV2);
+            Utils.async(2000L, CouponAutoReceiver::check);
         } else {
             SettingsSyncHelper.register();
+        }
+        long end = System.currentTimeMillis();
+        Logger.debug(() -> String.format("Initializing BiliRoamingX on process %s cost %s ms", Utils.currentProcessName(), end - start));
+    }
+
+    @Keep
+    public static void onClassInit() {
+        String officialSignature = "MIICVzCCAcCgAwIBAgIETzuw7DANBgkqhkiG9w0BAQUFADBvMQswCQYDVQQGEwJDTjESMBAGA1UECBMJR3Vhbmdkb25nMQ8wDQYDVQQHEwZaaHVoYWkxEzARBgNVBAoTCmRhbm1ha3UudHYxEzARBgNVBAsTCmRhbm1ha3UudHYxETAPBgNVBAMTCEJiY2FsbGVuMCAXDTEyMDIxNTEzMTk0MFoYDzIwNjYxMTE4MTMxOTQwWjBvMQswCQYDVQQGEwJDTjESMBAGA1UECBMJR3Vhbmdkb25nMQ8wDQYDVQQHEwZaaHVoYWkxEzARBgNVBAoTCmRhbm1ha3UudHYxEzARBgNVBAsTCmRhbm1ha3UudHYxETAPBgNVBAMTCEJiY2FsbGVuMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/yXoLdjq+kkrwvAanfPzULANSIYvflMMGnuAEbXOazIDymmNXaUPTEL3Jn9+Ssxiyvrgqpu18HaK4MJtzaj1ajUU3BMXdtCL83POUW37sFWhOiYbKW+K87VYq/utk+ZIplrXtWKB4P3Ll1sUNsfsxQmrR9kpVWkhUMUNgH2wcEQIDAQABMA0GCSqGSIb3DQEBBQUAA4GBAAC3ZtZ7Mw69jZSmcEH8TNxjM36q5V9rsntK+o92nW1wIKoSoQRMN4SfJumqqrou4T4aAcRDMkKNeYMiE+GCOJQMy5WnhvpMhgLkmajgBo4tTIQnNzqeDUt429HxpcpBBpjM+YrYdGhKb+xUd4lzvJFPRKp7DmPt6c5SwM6ZtiB/";
+        fakeSignatures(Pair.create(Utils.currentPackageName(), officialSignature));
+    }
+
+    @SafeVarargs
+    private static void fakeSignatures(Pair<String, String>... pairs) {
+        Parcelable.Creator<PackageInfo> originalCreator = PackageInfo.CREATOR;
+        Parcelable.Creator<PackageInfo> newCreator = new Parcelable.Creator<>() {
+            @Override
+            public PackageInfo createFromParcel(Parcel source) {
+                PackageInfo packageInfo = originalCreator.createFromParcel(source);
+                if (!originalSignatures.containsKey(packageInfo.packageName) && packageInfo.signatures != null && packageInfo.signatures.length > 0) {
+                    Signature signature = packageInfo.signatures[0];
+                    String signatureBase64 = Base64.encodeToString(signature.toByteArray(), Base64.NO_WRAP);
+                    originalSignatures.put(packageInfo.packageName, signatureBase64);
+                }
+                for (Pair<String, String> pair : pairs) {
+                    String packageName = pair.first;
+                    String signatureData = pair.second;
+                    if (packageInfo.packageName.equals(packageName)) {
+                        Signature fakeSignature = new Signature(Base64.decode(signatureData, Base64.DEFAULT));
+                        if (packageInfo.signatures != null && packageInfo.signatures.length > 0) {
+                            packageInfo.signatures[0] = fakeSignature;
+                        }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            if (packageInfo.signingInfo != null) {
+                                Signature[] signaturesArray = packageInfo.signingInfo.getApkContentsSigners();
+                                if (signaturesArray != null && signaturesArray.length > 0) {
+                                    signaturesArray[0] = fakeSignature;
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+                return packageInfo;
+            }
+
+            @Override
+            public PackageInfo[] newArray(int size) {
+                return originalCreator.newArray(size);
+            }
+        };
+        try {
+            Reflex.setStaticObjectField(PackageInfo.class, "CREATOR", newCreator);
+        } catch (Throwable t) {
+            Log.e(Logger.LOG_TAG, "Failed to set PackageInfo.CREATOR", t);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            HiddenApiBypass.addHiddenApiExemptions("Landroid/os/Parcel;", "Landroid/content/pm/PackageManager;", "Landroid/app/PropertyInvalidatedCache;");
+        }
+        try {
+            Object cache = Reflex.getStaticObjectField(PackageManager.class, "sPackageInfoCache");
+            Reflex.callMethod(cache, "clear");
+        } catch (NoSuchFieldError ignored) {
+        } catch (Throwable t) {
+            Log.e(Logger.LOG_TAG, "Failed to clear PackageManager.sPackageInfoCache", t);
+        }
+        try {
+            Map<?, ?> mCreators = Reflex.getStaticObjectField(Parcel.class, "mCreators");
+            mCreators.clear();
+        } catch (NoSuchFieldError ignored) {
+        } catch (Throwable t) {
+            Log.e(Logger.LOG_TAG, "Failed to clear Parcel.mCreators", t);
+        }
+        try {
+            Map<?, ?> sPairedCreators = Reflex.getStaticObjectField(Parcel.class, "sPairedCreators");
+            sPairedCreators.clear();
+        } catch (NoSuchFieldError ignored) {
+        } catch (Throwable t) {
+            Log.e(Logger.LOG_TAG, "Failed to clear Parcel.sPairedCreators", t);
         }
     }
 
@@ -285,6 +379,16 @@ public class ApplicationDelegate {
                 LayoutInflater layoutInflater = activity.getLayoutInflater();
                 LayoutInflater.Factory2 factory2 = layoutInflater.getFactory2();
                 Reflex.setObjectField(layoutInflater, "mFactory2", new SettingsLayoutFactory(factory2));
+            } else if (activity instanceof StoryVideoActivity) {
+                int storyUIStyle = Integer.parseInt(Settings.StoryUIStyle.get());
+                if (storyUIStyle != 0) {
+                    SharedPreferences storyPrefs = KtUtils.getStoryPrefs();
+                    if (storyPrefs.getInt("pref_story_ui_exp_style", 0) != storyUIStyle) {
+                        SharedPreferences.Editor editor = storyPrefs.edit();
+                        editor.putInt("pref_story_ui_exp_style", storyUIStyle);
+                        editor.apply();
+                    }
+                }
             }
         }
 

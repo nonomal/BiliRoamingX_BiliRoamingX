@@ -92,9 +92,9 @@ object DmView : MossHook<DmViewReq, DmViewReply>() {
         if (Settings.AutoGenerateSubtitle()) {
             val subtitles = result.subtitle.subtitlesList + extraSubtitles
             if (subtitles.map { it.lan }.let {
-                    "zh-Hans" !in it && "zh-CN" !in it && "ai-zh" !in it && "en" in it
+                    "zh-Hans" !in it && "zh-CN" !in it && "ai-zh" !in it && it.any { lan -> lan.startsWith("en") }
                 }) {
-                val enSub = subtitles.first { it.lan == "en" }
+                val enSub = subtitles.first { it.lan.startsWith("en") }
                 val autoCNSub = SubtitleItem().apply {
                     aiStatus = SubtitleAiStatus.Assist
                     aiType = SubtitleAiType.Translate
@@ -121,6 +121,14 @@ object DmView : MossHook<DmViewReq, DmViewReply>() {
             }
         } else if (cid != dmViewReq.oid) {
             Subtitle.importedSubtitles = dmViewReq.oid to mutableListOf()
+        }
+        val subtitlesList = result.subtitle.subtitlesList
+        if (Settings.AutoSelectAISubtitle() && subtitlesList.map { it.lan }
+                .none { it == "zh-Hans" || it == "zh-CN" }) {
+            subtitlesList.find { it.lan == "ai-zh" }?.run {
+                lan = "zh-Hans"
+                type = SubtitleType.CC
+            }
         }
         return result
     }

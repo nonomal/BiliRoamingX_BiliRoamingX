@@ -1,5 +1,6 @@
 package app.revanced.bilibili.settings
 
+import android.graphics.Color
 import app.revanced.bilibili.content.BiliDocumentsProvider
 import app.revanced.bilibili.utils.*
 
@@ -10,24 +11,23 @@ object Settings {
 
     // region Group: 解锁番剧限制
     @JvmField val UnlockAreaLimit = BooleanSetting(key = "main_func")
-    @JvmField val AllowDownload = BooleanSetting(key = "allow_download")
+    @JvmField val AllowDownload = BooleanSetting(key = "allow_download", dependency = UnlockAreaLimit)
     @JvmField val AllowMiniPlay = BooleanSetting(key = "allow_mini_play")
     @JvmField val TaiWanServer = StringSetting(key = "tw_server")
     @JvmField val HongKongServer = StringSetting(key = "hk_server")
     @JvmField val ChinaServer = StringSetting(key = "cn_server")
     @JvmField val ThailandServer = StringSetting(key = "th_server")
     @JvmField val UposHost = StringSetting(key = "upos_host")
-    @JvmField val SaveThailandHistory = BooleanSetting(key = "save_th_history", defValue = true)
+    @JvmField val SaveThailandHistory =
+        BooleanSetting(key = "save_th_history", defValue = true, dependency = UnlockAreaLimit)
     // endregion
 
 
     // region Group: 播放器
     @JvmField val HalfScreenQuality = StringSetting(key = "half_screen_quality", defValue = "0")
     @JvmField val FullScreenQuality = StringSetting(key = "full_screen_quality", defValue = "0")
-    @JvmField val MobileFullScreenQuality =
-        StringSetting(key = "full_screen_quality_mobile", defValue = "0")
-    @JvmField val PlayerVersion =
-        StringSetting(key = "player_version", defValue = "0", needReboot = true)
+    @JvmField val MobileFullScreenQuality = StringSetting(key = "full_screen_quality_mobile", defValue = "0")
+    @JvmField val PlayerVersion = StringSetting(key = "player_version", defValue = "0", needReboot = true)
     @JvmField val RememberLosslessSetting = BooleanSetting(key = "remember_lossless_setting")
     @JvmField val DefaultPlaybackSpeed = FloatSetting(key = "default_playback_speed")
     @JvmField val LongPressPlaybackSpeed = FloatSetting(key = "long_press_playback_speed")
@@ -54,11 +54,9 @@ object Settings {
     @JvmField val ShortDurationLimit = IntSetting(key = "hide_short_duration_recommend_limit")
     @JvmField val LongDurationLimit = IntSetting(key = "hide_long_duration_recommend_limit")
     @JvmField val HomeRcmdFilterTitle = StringSetSetting(key = "home_filter_keywords_title")
-    @JvmField val HomeRcmdFilterTitleRegexMode =
-        BooleanSetting(key = "home_filter_title_regex_mode")
+    @JvmField val HomeRcmdFilterTitleRegexMode = BooleanSetting(key = "home_filter_title_regex_mode")
     @JvmField val HomeRcmdFilterReason = StringSetSetting(key = "home_filter_keywords_reason")
-    @JvmField val HomeRcmdFilterReasonRegexMode =
-        BooleanSetting(key = "home_filter_reason_regex_mode")
+    @JvmField val HomeRcmdFilterReasonRegexMode = BooleanSetting(key = "home_filter_reason_regex_mode")
     @JvmField val HomeRcmdFilterUid = StringSetSetting(key = "home_filter_keywords_uid")
     @JvmField val HomeRcmdFilterUp = StringSetSetting(key = "home_filter_keywords_up")
     @JvmField val HomeRcmdFilterUpRegexMode = BooleanSetting(key = "home_filter_up_regex_mode")
@@ -70,14 +68,12 @@ object Settings {
     @JvmField val AddKorea = BooleanSetting(key = "add_korea", needReboot = true)
     @JvmField val PurifyGame = BooleanSetting(key = "purify_game", needReboot = true)
     @JvmField val Drawer = BooleanSetting(key = "drawer")
-    @JvmField val DisableHomeStory =
-        BooleanSetting(key = "disable_main_page_story", needReboot = true)
+    @JvmField val DisableHomeStory = BooleanSetting(key = "disable_main_page_story", needReboot = true)
     @JvmField val BlockTopActivity =
         BooleanSetting(key = "block_top_activity", needReboot = true, onChange = { value, _ ->
             if (value) deleteTopActivityEntrance()
         })
-    @JvmField val BlockRecommendGuidance =
-        BooleanSetting(key = "block_recommend_guidance", needReboot = true)
+    @JvmField val BlockRecommendGuidance = BooleanSetting(key = "block_recommend_guidance", needReboot = true)
     @JvmField val BlockPopularTopEntrance = BooleanSetting(key = "block_popular_top_entrance")
     @JvmField val BlockPopularTopicList = BooleanSetting(key = "block_popular_topic_list")
     @JvmField val BlockPopularRcmdUp = BooleanSetting(key = "block_popular_rcmd_up")
@@ -103,10 +99,10 @@ object Settings {
     @JvmField val DynPurifyUp = StringSetSetting(key = "customize_dynamic_keyword_upname")
     @JvmField val DynPurifyUid = StringSetSetting(key = "customize_dynamic_keyword_uid")
     @JvmField val DynPurifyTopic = StringSetSetting(key = "customize_dynamic_keyword_topic")
-    @JvmField val DynForceOldTabStyle =
-        BooleanSetting(key = "dynamic_force_old_tab", needReboot = true)
+    @JvmField val DynForceOldTabStyle = BooleanSetting(key = "dynamic_force_old_tab", needReboot = true)
     @JvmField val DynRmCm = BooleanSetting(key = "dynamic_rm_cm")
     @JvmField val DynRmStory = BooleanSetting(key = "dynamic_rm_story")
+    @JvmField val DynNoUpRecall = BooleanSetting(key = "dynamic_no_up_recall", needReboot = true)
     // endregion
 
 
@@ -119,18 +115,19 @@ object Settings {
     @JvmField val SwitchDarkTipsDialog = BooleanSetting(key = "switch_dark_dialog")
     @JvmField val AddChannel = BooleanSetting(key = "add_channel", needReboot = true)
     @JvmField val AddPodcast = BooleanSetting(key = "add_podcast")
+    @JvmField val BlockTips = BooleanSetting(key = "block_tips")
     // endregion
 
 
     // region Group: 直播间
     @JvmField val ForbidSwitchLiveRoom = BooleanSetting(key = "forbid_switch_live_room")
-    @JvmField val DisableLiveRoomDoubleClick =
-        BooleanSetting(key = "disable_live_room_double_click")
+    @JvmField val DisableLiveRoomDoubleClick = BooleanSetting(key = "disable_live_room_double_click")
     @JvmField val PurifyLivePopups = StringSetSetting(key = "purify_live_popups")
     @JvmField val RemoveLiveMask = BooleanSetting(key = "remove_live_mask")
     @JvmField val DefaultMaxQn = BooleanSetting(key = "default_max_qn")
     @JvmField val DisableSlideLeft = BooleanSetting(key = "disable_slide_left")
     @JvmField val DisableAutoFloat = BooleanSetting(key = "disable_auto_float")
+    @JvmField val RemoveLiveWatermark = BooleanSetting(key = "remove_live_watermark")
     // endregion
 
 
@@ -166,8 +163,7 @@ object Settings {
     @JvmField val BlockCommentUp = StringSetSetting(key = "block_comment_up")
     @JvmField val BlockCommentUpRegexMode = BooleanSetting(key = "block_comment_up_regex_mode")
     @JvmField val BlockCommentContent = StringSetSetting(key = "block_comment_content")
-    @JvmField val BlockCommentContentRegexMode =
-        BooleanSetting(key = "block_comment_content_regex_mode")
+    @JvmField val BlockCommentContentRegexMode = BooleanSetting(key = "block_comment_content_regex_mode")
     @JvmField val BlockCommentUpLevel = IntSetting(key = "block_comment_up_level")
     @JvmField val ExternalDownloader = BooleanSetting(key = "external_downloader")
     @JvmField val ExternalDownloaderName =
@@ -177,6 +173,7 @@ object Settings {
     @JvmField val BlockCommentFeedback = BooleanSetting(key = "block_comment_feedback")
     @JvmField val NotLockOrientation = BooleanSetting(key = "not_lock_orientation")
     @JvmField val CheckComment = BooleanSetting(key = "check_comment")
+    @JvmField val StoryUIStyle = StringSetting(key = "story_ui_style", defValue = "0")
     // endregion
 
 
@@ -185,6 +182,7 @@ object Settings {
     @JvmField val CustomizeSpace = StringSetSetting(key = "customize_space")
     @JvmField val AddArticleTab = BooleanSetting(key = "add_article_tab")
     @JvmField val IgnoreBlacklist = BooleanSetting(key = "ignore_blacklist")
+    @JvmField val UidCopyNoPrefix = BooleanSetting(key = "uid_copy_no_prefix")
     // endregion
 
 
@@ -198,19 +196,17 @@ object Settings {
 
     // region Group: 字幕
     @JvmField val AutoGenerateSubtitle = BooleanSetting(key = "auto_generate_subtitle")
+    @JvmField val AutoSelectAISubtitle = BooleanSetting(key = "auto_select_ai_subtitle")
     @JvmField val EnableCustomSubtitleStyle = BooleanSetting(key = "custom_subtitle")
     @JvmField val RemoveSubtitleBg = BooleanSetting(key = "subtitle_remove_bg", defValue = true)
     @JvmField val BoldSubtitleText = BooleanSetting(key = "subtitle_bold", defValue = true)
     @JvmField val SubtitleFontSizePortrait = IntSetting(key = "subtitle_font_size_portrait")
     @JvmField val SubtitleFontSizeLandscape = IntSetting(key = "subtitle_font_size_landscape")
-    @JvmField val SubtitleFillColor =
-        StringSetting(key = "subtitle_font_color2", defValue = "FFFFFFFF")
-    @JvmField val SubtitleStrokeColor =
-        StringSetting(key = "subtitle_stroke_color", defValue = "FF000000")
+    @JvmField val SubtitleFillColor = StringSetting(key = "subtitle_font_color2", defValue = "FFFFFFFF")
+    @JvmField val SubtitleStrokeColor = StringSetting(key = "subtitle_stroke_color", defValue = "FF000000")
     @JvmField val SubtitleStrokeWidth = FloatSetting(key = "subtitle_stroke_width", defValue = 5.0f)
     @JvmField val SubtitleOffset = IntSetting(key = "subtitle_offset")
-    @JvmField val SubtitleTranslateServer =
-        StringSetting(key = "subtitle_translate_server", defValue = "microsoft")
+    @JvmField val SubtitleTranslateServer = StringSetting(key = "subtitle_translate_server", defValue = "microsoft")
     @JvmField val SubtitleImportSave = BooleanSetting(key = "subtitle_import_save")
     // endregion
 
@@ -243,16 +239,14 @@ object Settings {
     @JvmField val FuckMiniProgram = BooleanSetting(key = "mini_program")
     @JvmField val NumberFormat = BooleanSetting(key = "number_format")
     @JvmField val AutoReceiveCoupon = BooleanSetting(key = "auto_receive_coupon")
-    @JvmField val DisplaySize =
-        StringSetting(key = "display_size", defValue = "0", needReboot = true)
+    @JvmField val DisplaySize = StringSetting(key = "display_size", defValue = "0", needReboot = true)
     @JvmField val CustomSplash = BooleanSetting(key = "custom_splash")
     @JvmField val CustomSplashLogo = BooleanSetting(key = "custom_splash_logo")
     @JvmField val FullSplash = BooleanSetting(key = "full_splash")
     @JvmField val EnableAv = BooleanSetting(key = "enable_av", needReboot = true)
-    @JvmField val EnableDocProvider =
-        BooleanSetting(key = "enable_doc_provider", onChange = { value, _ ->
-            changeComponentState(BiliDocumentsProvider::class.java, value)
-        })
+    @JvmField val EnableDocProvider = BooleanSetting(key = "enable_doc_provider", onChange = { value, _ ->
+        changeComponentState(BiliDocumentsProvider::class.java, value)
+    })
     @JvmField val DisableAvif = BooleanSetting(key = "disable_avif", needReboot = true)
     @JvmField val PurifySplash = BooleanSetting(key = "purify_splash", onChange = { value, async ->
         if (value) if (async) {
@@ -261,13 +255,14 @@ object Settings {
             clearSplashConfigCache()
         }
     })
+    @JvmField val DisallowCollectPrivacyInfo = BooleanSetting(key = "disallow_collect_privacy_info", needReboot = true)
     // endregion
 
 
     // region Group: 非配置项
     @JvmField val LosslessEnabled = BooleanSetting(key = "lossless_enabled")
     @JvmField val BgPlayingEnabled = BooleanSetting(key = "bg_playing_enabled")
-    @JvmField val CustomColor = IntSetting(key = "biliroaming_custom_color", defValue = -0xe6b7d)
+    @JvmField val CustomColor = IntSetting(key = "biliroaming_custom_color", defValue = Color.WHITE)
     @JvmField val SkinJson = StringSetting(key = "skin_json", dependency = Skin)
     // endregion
 }

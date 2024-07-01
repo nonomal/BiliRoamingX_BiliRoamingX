@@ -453,9 +453,23 @@
     <string name="biliroaming_disable_p2p_upload_title">禁止直播及视频P2P上传</string>
     <string name="biliroaming_disable_p2p_upload_summary">有助于减少网络带宽占用，同时避免运营商针对PCDN可能的限速</string>
     <string name="biliroaming_prefer_stable_cdn_title">优选稳定CDN</string>
-    <string name="biliroaming_prefer_stable_cdn_summary">观看直播或视频时，优先选择大厂稳定的CDN节点播放，如若遇到直播或视频经常卡顿问题，可启用此选项。</string>
+    <string name="biliroaming_prefer_stable_cdn_summary">观看视频时，优先选择大厂稳定的CDN节点播放，如若遇到视频经常卡顿问题，可启用此选项。</string>
     <string name="biliroaming_view">查看</string>
     <string name="biliroaming_found_new_version">（发现新版本%s）</string>
     <string name="biliroaming_block_home_recent_used_title">屏蔽最近使用</string>
     <string name="biliroaming_block_home_recent_used_summary">屏蔽最近页面的最近使用，例如最近使用的小程序</string>
+    <string name="biliroaming_remove_live_watermark_title">移除水印</string>
+    <string name="biliroaming_remove_live_watermark_summary">移除左上角直播和房间号水印</string>
+    <string name="biliroaming_story_ui_style_title">竖屏模式页面样式</string>
+    <string name="biliroaming_dynamic_no_up_recall_title">动态标签不显示最新UP主头像</string>
+    <string name="biliroaming_dynamic_no_up_recall_summary">仅在动态标签角标上显示未读动态数</string>
+    <string name="biliroaming_disallow_collect_privacy_info_title">禁止采集隐私信息</string>
+    <string name="biliroaming_disallow_collect_privacy_info_summary">例如已安装应用列表，Wi-Fi ssid，DeviceId等</string>
+    <string name="biliroaming_auto_select_ai_subtitle_title">自动选择AI中文字幕</string>
+    <string name="biliroaming_auto_select_ai_subtitle_summary">当视频没有CC中文字幕时，自动选择可用的AI中文字幕</string>
+    <string name="biliroaming_uid_copy_no_prefix_title">复制UID时去掉“UID:”前缀</string>
+    <string name="biliroaming_block_tips_title">屏蔽活动条</string>
+    <string name="biliroaming_export_access_key_title">复制访问密钥</string>
+    <string name="biliroaming_export_access_key_summary">复制当前账号访问密钥，即access_key</string>
+    <string name="biliroaming_access_key_copied">已复制到剪贴板</string>
 </resources>

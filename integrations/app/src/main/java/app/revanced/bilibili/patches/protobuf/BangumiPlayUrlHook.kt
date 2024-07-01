@@ -127,6 +127,13 @@ object BangumiPlayUrlHook {
                 download = 0
             }
         }
+        val extraContent = req.extraContentMap
+        val epId = extraContent.getOrDefault("ep_id", "0").toLong()
+        val seasonId = extraContent.getOrDefault("season_id", "0").toLong()
+        if (epId != 0L && epId == req.vod.cid || seasonId != 0L && seasonId == req.vod.aid) {
+            req.vod.cid = 0L
+            req.vod.aid = 0L
+        }
     }
 
     @JvmStatic
@@ -172,6 +179,18 @@ object BangumiPlayUrlHook {
         if (error != null) throw error else return reply
     }
 
+    private fun fixDefaultQuality(error: MossException?, req: PlayViewUniteReq, response: PlayViewUniteReply) {
+        if (error == null && !isDownloadUnite && (VideoQualityPatch.halfScreenQuality() != 0 || VideoQualityPatch.getMatchedFullScreenQuality() != 0)) {
+            val requestQn = req.vod.qn
+            if (requestQn > 0 && response.hasVodInfo() && response.vodInfo.quality.toLong() != requestQn) {
+                response.vodInfo.streamListList.filter { it.hasDashVideo() || it.hasSegmentVideo() }
+                    .asReversed().minByOrNull { abs(requestQn - it.streamInfo.quality) }?.let {
+                        response.vodInfo.quality = it.streamInfo.quality
+                    }
+            }
+        }
+    }
+
     @JvmStatic
     fun hookPlayViewUniteAfter(
         req: PlayViewUniteReq,
@@ -184,6 +203,7 @@ object BangumiPlayUrlHook {
         var finalError = error
         val response = reply ?: tryFixAidPGC(req, error)
             ?.also { finalError = null } ?: PlayViewUniteReply()
+        fixDefaultQuality(finalError, req, response)
         val supplementAny = response.supplement
         val typeUrl = supplementAny.typeUrl
         // Only handle pgc video
@@ -221,10 +241,13 @@ object BangumiPlayUrlHook {
                     response, supplement, "请求解析服务器发生错误\n${e.message}"
                 )
             }
-        } else if (finalError == null && allowDownloadUnite) {
-            return fixDownloadProtoUnite(response)
-        } else if (finalError == null && (Settings.BlockBangumiPageAds() || Settings.RemoveCmdDms())) {
-            return purifyViewInfoUnite(response, supplement)
+        } else if (finalError == null) {
+            if (allowDownloadUnite)
+                return fixDownloadProtoUnite(response)
+            var newReply = response
+            if (Settings.BlockBangumiPageAds() || Settings.RemoveCmdDms())
+                newReply = purifyViewInfoUnite(newReply, supplement)
+            return newReply
         }
         finalError?.let { throw it } ?: return reply
     }
@@ -568,7 +591,7 @@ object BangumiPlayUrlHook {
                 jsonContent = jsonContent.getJSONObject("result")
         }
         response.apply {
-            videoInfo = jsonContent.toVideoInfo(req.preferCodecType.ordinal, isDownload)
+            videoInfo = jsonContent.toVideoInfo(req.qn, req.preferCodecType.ordinal, isDownload)
             fixBusinessProto(thaiSeason, thaiEp, jsonContent)
             viewInfo = ViewInfo()
             playConf = PlayAbilityConf().apply {
@@ -608,7 +631,7 @@ object BangumiPlayUrlHook {
         }
         response.apply {
             vodInfo = VodInfo.parseFrom(
-                jsonContent.toVideoInfo(req.vod.preferCodecType.ordinal, isDownload).toByteArray()
+                jsonContent.toVideoInfo(req.vod.qn, req.vod.preferCodecType.ordinal, isDownload).toByteArray()
             )
             val thai = !hasPlayArc()
             if (thai) {
@@ -680,8 +703,8 @@ object BangumiPlayUrlHook {
         .also { Logger.debug { "playurl reconstruct unite response: $it" } }
 
     private fun JSONObject.toVideoInfo(
-        preferCodec: Int, isDownload: Boolean
-    ) = VideoInfo().apply root@{
+        requestQn: Long, preferCodec: Int, isDownload: Boolean
+    ) = VideoInfo().apply {
         val type = optString("type")
         val videoCodecId = optInt("video_codecid")
         val formatMap = HashMap<Int, JSONObject>()
@@ -712,8 +735,6 @@ object BangumiPlayUrlHook {
                         }
                     }
                 }.toList().let { addAllDashAudio(it) }
-            var bestMatchQn = quality
-            var minDeltaQn = Int.MAX_VALUE
             val preferCodecId = codecMap[preferCodec] ?: videoCodecId
             val videos = optJSONObject("dash")?.optJSONArray("video")
                 ?.asSequence<JSONObject>()?.toList().orEmpty()
@@ -738,11 +759,6 @@ object BangumiPlayUrlHook {
                 }
                 val streamInfo = StreamInfo().apply {
                     quality = video.optInt("id")
-                    val deltaQn = abs(quality - this@root.quality)
-                    if (deltaQn < minDeltaQn) {
-                        bestMatchQn = quality
-                        minDeltaQn = deltaQn
-                    }
                     intact = true
                     attribute = 0
                     formatMap[quality]?.run {
@@ -760,7 +776,10 @@ object BangumiPlayUrlHook {
                     this.streamInfo = streamInfo
                 }
             }.let { addAllStreamList(it) }
-            quality = bestMatchQn
+            val qn = if (requestQn > 0) requestQn.toInt() else quality
+            quality = preferVideos.asReversed().minByOrNull {
+                abs(it.optInt("id") - qn)
+            }?.optInt("id") ?: qn
         }
         replaceUpos()
         if (isDownload) {

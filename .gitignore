@@ -5,6 +5,8 @@
 /captures
 .externalNativeBuild
 .cxx
-/.idea
 /.vscode
 /*.log
+/.idea/*
+!/.idea/codeStyles
+.kotlin

@@ -35,7 +35,7 @@ public class AutoLikePatch {
         if (cachedFieldName == null) {
             for (Field field : viewHolder.getClass().getDeclaredFields()) {
                 if (!View.class.isAssignableFrom(field.getType())) continue;
-                View view = (View) Reflex.getObjectField(viewHolder, field.getName());
+                View view = Reflex.getObjectField(viewHolder, field.getName());
                 if (view != null && (view.getId() == likeId || view.getId() == like2Id)) {
                     cachedFieldName = field.getName();
                     break;
@@ -44,7 +44,7 @@ public class AutoLikePatch {
         }
         if (cachedFieldName == null) return;
         if (like == 0) {
-            View likeView = (View) Reflex.getObjectField(viewHolder, cachedFieldName);
+            View likeView = Reflex.getObjectField(viewHolder, cachedFieldName);
             likeView.callOnClick();
         }
     }
@@ -58,7 +58,7 @@ public class AutoLikePatch {
         likedVideos.add(aid);
         if (like != 0) return;
         // delay 500 ms to make sure view standby
-        Utils.runOnMainThread(500L, () -> Utils.async(() -> {
+        Utils.async(500L, () -> {
             // async search like button, to improve performance
             Activity activity = ApplicationDelegate.getTopActivity();
             if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
@@ -68,6 +68,6 @@ public class AutoLikePatch {
                     Utils.runOnMainThread(view::callOnClick);
                 }
             }
-        }));
+        });
     }
 }

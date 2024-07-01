@@ -1,6 +1,5 @@
 package app.revanced.bilibili.account
 
-import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -17,6 +16,7 @@ import java.io.File
 import java.io.RandomAccessFile
 import java.nio.channels.FileChannel
 import java.text.SimpleDateFormat
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 object Accounts {
@@ -160,9 +160,7 @@ object Accounts {
             accountInfoCache = null
             Utils.async { getInfo() }
             if (Utils.isMainProcess())
-                Utils.runOnMainThread(5000L) {
-                    Utils.async { checkUserStatus() }
-                }
+                Utils.async(5000L) { checkUserStatus() }
         }
         if ((isSignOut || isSwitchAccount) && Utils.isMainProcess() && Settings.Skin()) {
             Settings.Skin.save(false)
@@ -175,7 +173,6 @@ object Accounts {
     private var dialogShowing = false
 
     @JvmStatic
-    @SuppressLint("SimpleDateFormat")
     private fun checkUserStatus() = runCatching {
         val mid = Accounts.mid
         if (mid <= 0) return@runCatching
@@ -192,7 +189,7 @@ object Accounts {
         if (info.isBlacklist && info.banUntil.time > current) Utils.runOnMainThread {
             cachePrefs.edit { putBoolean(blockedKey, true) }
             userBlocked = true
-            val formatTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+            val formatTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 .format(info.banUntil)
             val topActivity = ApplicationDelegate.getTopActivity()
             if (topActivity != null && !dialogShowing) {

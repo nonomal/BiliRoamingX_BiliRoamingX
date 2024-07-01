@@ -19,7 +19,8 @@ import app.revanced.util.*
     dependencies = [ResourceMappingPatch::class]
 )
 object SettingsResourcePatch : ResourcePatch() {
-    private var packageName = ""
+    var packageName = ""
+        private set
 
     val isPink get() = packageName == "tv.danmaku.bili"
     val isPlay get() = packageName == "com.bilibili.app.in"
@@ -64,6 +65,7 @@ object SettingsResourcePatch : ResourcePatch() {
         "biliroaming_setting_filter_comment.xml",
         "biliroaming_setting_subtitle_translate_server.xml",
         "biliroaming_setting_external_downloader.xml",
+        "biliroaming_setting_story_ui_style.xml",
     )
     private val layouts = arrayOf(
         "biliroaming_dialog_argb_color_choose.xml",

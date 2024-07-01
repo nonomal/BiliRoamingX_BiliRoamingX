@@ -15,13 +15,36 @@ object ConfigPatch {
         "ff_united_video_setting",                    // 新版三点菜单
     )
 
+    @JvmStatic
+    private val alwaysDisabledAbKeys = arrayOf(
+        "security_defend_enabled",                    // 禁用安全防御，LibBili#d(long,com.bilibili.nativelibrary.Rt)V 定期检查，会通过 java API 获取签名等信息
+    )
+
+    @JvmStatic
+    private val privacyInfoKeys = arrayOf(
+        "ff_open_privacy.applist.info",
+        "ff_open_bssid",
+        "ff_open_imei_all",
+        "ff_open_applist.info_all",
+        "ff_open_applist.pk_all",
+        "ff_open_privacy.pkglist",
+        "ff_open_mac",
+        "ff_open_meid_all",
+        "ff_open_ssid",
+        "ff_open_device_id_all",
+    )
+
     @Keep
     @JvmStatic
     fun getAb(key: String, defValue: Boolean?, origin: Boolean?): Boolean? {
         //Logger.debug { "ConfigPatch, ab of $key: $origin, default: $defValue" }
+        if (alwaysDisabledAbKeys.contains(key))
+            return false
         if (alwaysEnabledAbKeys.contains(key))
             return true
-        else if ("ff_player_fav_new" == key && Settings.ForceOldFav())
+        if (Settings.DisallowCollectPrivacyInfo() && privacyInfoKeys.contains(key))
+            return false
+        if ("ff_player_fav_new" == key && Settings.ForceOldFav())
             return false
         else if ("ff_unite_detail2" == key || "ff_unite_player" == key /*<7.39.0*/) {
             val playerVersion = Settings.PlayerVersion()
