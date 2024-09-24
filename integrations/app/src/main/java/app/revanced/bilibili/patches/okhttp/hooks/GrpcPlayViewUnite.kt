@@ -9,6 +9,7 @@ import app.revanced.bilibili.settings.Settings
 import app.revanced.bilibili.utils.Utils
 import app.revanced.bilibili.utils.base64
 import app.revanced.bilibili.utils.base64Decode
+import app.revanced.bilibili.utils.getFinalAccessKey
 import com.bapis.bilibili.metadata.network.Network
 import com.bapis.bilibili.metadata.network.NetworkType
 
@@ -21,9 +22,12 @@ object GrpcPlayViewUnite : BaseFakeClientGrpcHook() {
     }
 
     override fun hookBefore(url: String, headers: Array<String>): Pair<String, Array<String>> {
-        val newHeaders = if (Settings.UnlockPlayLimit() && Utils.isPlay()) {
+        val newHeaders = if (Settings.UnlockAreaLimit() && Utils.isPlay()) {
             super.hookBefore(url, headers).second
         } else headers
+        val authIndex = newHeaders.indexOfFirst { it == "authorization" }
+        if (authIndex != -1)
+            newHeaders[authIndex + 1] = "identify_v1 ${getFinalAccessKey(false)}"
         if ((Utils.isPink() || Utils.isPlay()) && Settings.TrialVipQuality() && !Accounts.isEffectiveVip) {
             val keyIndex = newHeaders.indexOfFirst { it == "x-bili-network-bin" }
             if (keyIndex == -1)

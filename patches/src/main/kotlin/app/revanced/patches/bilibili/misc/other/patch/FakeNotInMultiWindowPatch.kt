@@ -28,6 +28,7 @@ object FakeNotInMultiWindowPatch : BytecodePatch() {
             "Lcom/bilibili/bangumi/ui/page/detail/BangumiDetailActivityV3;",
             "Lcom/bilibili/video/videodetail/VideoDetailsActivity;",
             "Lcom/bilibili/multitypeplayerV2/MultiTypeVideoContentActivity;",
+            "Lcom/bilibili/bililive/room/ui/roomv3/LiveRoomActivityV3;",
         )
         activityTypes.mapNotNull { context.findClass(it)?.mutableClass }.forEach { clazz ->
             Method(
@@ -39,7 +40,7 @@ object FakeNotInMultiWindowPatch : BytecodePatch() {
             ).toMutable().apply {
                 addInstructions(
                     0, """
-                    invoke-static {}, Lapp/revanced/bilibili/patches/FakeNotInMultiWindowPatch;->enabled()Z
+                    invoke-static {}, Lapp/revanced/bilibili/patches/SettingsTransfer;->fakeNotInMultiWindow()Z
                     move-result v0
                     if-eqz v0, :not_fake
                     const/4 v0, 0x0
@@ -59,7 +60,7 @@ object FakeNotInMultiWindowPatch : BytecodePatch() {
                     it.name += "_Origin"
                     addInstructions(
                         0, """
-                        invoke-static {}, Lapp/revanced/bilibili/patches/FakeNotInMultiWindowPatch;->enabled()Z
+                        invoke-static {}, Lapp/revanced/bilibili/patches/SettingsTransfer;->fakeNotInMultiWindow()Z
                         move-result v0
                         if-eqz v0, :jump
                         return-void

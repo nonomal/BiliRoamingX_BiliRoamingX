@@ -2,65 +2,65 @@
 <resources>
     <string-array name="biliroaming_full_screen_quality_entries">
         <item>默认</item>
-        <item>240P</item>
-        <item>360P</item>
-        <item>480P</item>
-        <item>720P</item>
-        <item>720P 60帧</item>
-        <item>1080P</item>
-        <item>1080P 高码率</item>
-        <item>1080P 60帧</item>
-        <item>4K</item>
-        <item>HDR</item>
+        <item>8K 超高清</item>
         <item>杜比视界</item>
-        <item>8K</item>
+        <item>HDR 真彩</item>
+        <item>4K 超清</item>
+        <item>1080P 60帧</item>
+        <item>1080P 高码率</item>
+        <item>1080P 高清</item>
+        <item>720P 60帧</item>
+        <item>720P 高清</item>
+        <item>480P 清晰</item>
+        <item>360P 流畅</item>
+        <item>240P 极速</item>
     </string-array>
     <string-array name="biliroaming_full_screen_quality_values">
         <item>0</item>
-        <item>6</item>
-        <item>16</item>
-        <item>32</item>
-        <item>64</item>
-        <item>74</item>
-        <item>80</item>
-        <item>112</item>
-        <item>116</item>
-        <item>120</item>
-        <item>125</item>
-        <item>126</item>
         <item>127</item>
+        <item>126</item>
+        <item>125</item>
+        <item>120</item>
+        <item>116</item>
+        <item>112</item>
+        <item>80</item>
+        <item>74</item>
+        <item>64</item>
+        <item>32</item>
+        <item>16</item>
+        <item>6</item>
     </string-array>
     <string-array name="biliroaming_half_screen_quality_entries">
         <item>默认</item>
         <item>跟随全屏清晰度</item>
-        <item>240P</item>
-        <item>360P</item>
-        <item>480P</item>
-        <item>720P</item>
-        <item>720P 60帧</item>
-        <item>1080P</item>
-        <item>1080P 高码率</item>
-        <item>1080P 60帧</item>
-        <item>4K</item>
-        <item>HDR</item>
+        <item>8K 超高清</item>
         <item>杜比视界</item>
-        <item>8K</item>
+        <item>HDR 真彩</item>
+        <item>4K 超清</item>
+        <item>1080P 60帧</item>
+        <item>1080P 高码率</item>
+        <item>1080P 高清</item>
+        <item>720P 60帧</item>
+        <item>720P 高清</item>
+        <item>480P 清晰</item>
+        <item>360P 流畅</item>
+        <item>240P 极速</item>
     </string-array>
     <string-array name="biliroaming_half_screen_quality_values">
         <item>0</item>
         <item>1</item>
-        <item>6</item>
-        <item>16</item>
-        <item>32</item>
-        <item>64</item>
-        <item>74</item>
-        <item>80</item>
-        <item>112</item>
-        <item>116</item>
-        <item>120</item>
-        <item>125</item>
-        <item>126</item>
         <item>127</item>
+        <item>126</item>
+        <item>125</item>
+        <item>120</item>
+        <item>116</item>
+        <item>112</item>
+        <item>80</item>
+        <item>74</item>
+        <item>64</item>
+        <item>32</item>
+        <item>16</item>
+        <item>6</item>
     </string-array>
     <string-array name="biliroaming_live_popup_entries">
         <item>购物卡片</item>
@@ -73,6 +73,9 @@
         <item>正在去买</item>
         <item>礼物星球</item>
         <item>主播帮玩</item>
+        <item>各种+1</item>
+        <item>心愿助力</item>
+        <item>直播效果打分</item>
     </string-array>
     <string-array name="biliroaming_live_popup_values">
         <item>shoppingCard</item>
@@ -85,6 +88,9 @@
         <item>gotoBuy</item>
         <item>giftStar</item>
         <item>playTogether</item>
+        <item>plusOne</item>
+        <item>wish</item>
+        <item>qoe</item>
     </string-array>
     <string-array name="biliroaming_drawer_style_entries">
         <item>默认</item>
@@ -127,6 +133,7 @@
         <item>PGC 内容</item>
         <item>课堂</item>
         <item>漫画</item>
+        <item>无权查看视频</item>
         <item>大卡</item>
         <item>中卡</item>
         <item>小卡</item>
@@ -144,6 +151,7 @@
         <item>番剧、电影、电视剧、纪录片……</item>
         <item />
         <item />
+        <item>例如充电专属</item>
         <item>单列显示的</item>
         <item />
         <item>双列显示的</item>
@@ -161,6 +169,7 @@
         <item>bangumi</item>
         <item>course</item>
         <item>comic</item>
+        <item>cannot_play</item>
         <item>large_cover</item>
         <item>middle_cover</item>
         <item>small_cover</item>
@@ -364,6 +373,7 @@
         <item>专栏</item>
         <item>动态</item>
         <item>直播</item>
+        <item>课堂</item>
     </string-array>
     <string-array name="biliroaming_search_type_values">
         <item>hot_banner</item>
@@ -380,6 +390,7 @@
         <item>article</item>
         <item>twitter</item>
         <item>live</item>
+        <item>ketang</item>
     </string-array>
     <string-array name="biliroaming_block_follow_button_entries">
         <item>评论</item>
@@ -392,10 +403,12 @@
     <string-array name="biliroaming_filter_story_entries">
         <item>广告</item>
         <item>直播</item>
+        <item>课堂</item>
     </string-array>
     <string-array name="biliroaming_filter_story_values">
         <item>ad</item>
         <item>live</item>
+        <item>course</item>
     </string-array>
     <string-array name="block_modules_exception_entries">
         <item>发布动态</item>
@@ -412,6 +425,11 @@
         <item>0</item>
         <item>1</item>
         <item>2</item>
+    </string-array>
+    <string-array name="biliroaming_player_version_summaries">
+        <item />
+        <item>较高版本上由于缺少官方维护，可能存在问题，不建议使用</item>
+        <item />
     </string-array>
     <string-array name="biliroaming_display_size_entries">
         <item>更小</item>
@@ -438,5 +456,67 @@
     <string-array name="biliroaming_subtitle_translate_server_values">
         <item>microsoft</item>
         <item>google</item>
+    </string-array>
+    <string-array name="biliroaming_story_ui_style_entries">
+        <item>默认</item>
+        <item>样式1</item>
+        <item>样式2</item>
+        <item>样式3</item>
+    </string-array>
+    <string-array name="biliroaming_story_ui_style_summaries">
+        <item />
+        <item>操作按钮在右侧，左滑展示UP主投稿视频</item>
+        <item>操作按钮在底部，左滑展示UP主投稿视频</item>
+        <item>操作按钮在底部，左滑展示评论</item>
+    </string-array>
+    <string-array name="biliroaming_story_ui_style_values">
+        <item>0</item>
+        <item>4</item>
+        <item>6</item>
+        <item>7</item>
+    </string-array>
+    <string-array name="biliroaming_pegasus_cover_ratio_entries">
+        <item>默认</item>
+        <item>16:9</item>
+        <item>4:3</item>
+    </string-array>
+    <string-array name="biliroaming_pegasus_cover_ratio_values">
+        <item>0</item>
+        <item>1.777778</item>
+        <item>1.333333</item>
+    </string-array>
+    <string-array name="biliroaming_video_popup_entries">
+        <item>投票弹幕</item>
+        <item>三连关注弹幕</item>
+        <item>评分弹幕</item>
+        <item>评分总结弹幕</item>
+        <item>关联视频弹幕</item>
+        <item>其它</item>
+    </string-array>
+    <string-array name="biliroaming_video_popup_values">
+        <item>vote</item>
+        <item>attention</item>
+        <item>grade</item>
+        <item>gradeSummary</item>
+        <item>link</item>
+        <item>other</item>
+    </string-array>
+    <string-array name="biliroaming_video_popup_summaries">
+        <item />
+        <item />
+        <item />
+        <item />
+        <item />
+        <item>云视听小电视、免流引导、投资UP主、跳转应用等</item>
+    </string-array>
+    <string-array name="biliroaming_purify_search_type_entries">
+        <item>默认关键词</item>
+        <item>热搜</item>
+        <item>发现</item>
+    </string-array>
+    <string-array name="biliroaming_purify_search_type_values">
+        <item>words</item>
+        <item>trending</item>
+        <item>recommend</item>
     </string-array>
 </resources>

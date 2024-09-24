@@ -117,6 +117,13 @@ object MusicNotificationPatch {
         return playbackState
     }
 
+    private inline fun <T> Any.getObjectFieldAsX(field: String) = try {
+        getFieldAs<T>(field)
+    } catch (_: NoSuchFieldError) {
+        val mFiled = "m${field.replaceFirstChar { it.uppercaseChar() }}"
+        getFieldAs(mFiled)
+    }
+
     @Keep
     @JvmStatic
     fun onCreateNotification(self: Any, old: Notification?): Notification? {
@@ -131,7 +138,7 @@ object MusicNotificationPatch {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
             HiddenApiBypass.addHiddenApiExemptions("Landroid/widget/RemoteViews")
 
-        val actions = view.getObjectFieldAs<ArrayList<Any>>("mActions")
+        val actions = view.getFieldAs<ArrayList<Any>>("mActions")
         val buttons = mapOf(
             // only for live, live only has stop button
             stopId to ActionDesc(),
@@ -148,7 +155,7 @@ object MusicNotificationPatch {
         } ?: return old
 
         return Notification.Builder(
-            self.getObjectFieldAs<Service>(serviceField.name), old.channelId
+            self.getFieldAs<Service>(serviceField.name), old.channelId
         ).apply {
             setColor(old.color)
             setSmallIcon(old.smallIcon)
@@ -160,29 +167,29 @@ object MusicNotificationPatch {
             setCategory(old.category)
 
             for (action in actions) {
-                val viewId = action.getIntField("viewId")
+                val viewId = action.getObjectFieldAsX<Int>("viewId")
                 when (action.javaClass) {
                     bitmapActionClass -> when (viewId) {
                         liveNotificationIconId ->
-                            setLargeIcon(action.getObjectFieldAs<Bitmap>("bitmap"))
+                            setLargeIcon(action.getObjectFieldAsX<Bitmap>("bitmap"))
                     }
 
-                    reflectionActionClass -> when (action.getObjectFieldAs<String>("methodName")) {
+                    reflectionActionClass -> when (action.getObjectFieldAsX<String>("methodName")) {
                         "setText" -> when (viewId) {
                             liveNotificationTitleId ->
-                                setContentTitle(action.getObjectFieldAs<CharSequence>("value"))
+                                setContentTitle(action.getObjectFieldAsX<CharSequence>("value"))
 
                             liveNotificationSubtitleId ->
-                                setContentText(action.getObjectFieldAs<CharSequence>("value"))
+                                setContentText(action.getObjectFieldAsX<CharSequence>("value"))
 
                             liveNotificationUpNameId ->
-                                setSubText(action.getObjectFieldAs<CharSequence>("value"))
+                                setSubText(action.getObjectFieldAsX<CharSequence>("value"))
                         }
                     }
 
                     onClickActionClass -> {
-                        val pendingIntent = action.getObjectField("mResponse")
-                            ?.getObjectFieldAs<PendingIntent?>("mPendingIntent")
+                        val pendingIntent = action.getField("mResponse")
+                            ?.getFieldAs<PendingIntent?>("mPendingIntent")
                         when (viewId) {
                             liveNotificationStopId -> {
                                 buttons[stopId]?.icon = liveNotificationStopIconId
@@ -192,7 +199,7 @@ object MusicNotificationPatch {
                     }
 
                     onClickPendingIntentActionClass -> {
-                        val pendingIntent = action.getObjectFieldAs<PendingIntent?>("pendingIntent")
+                        val pendingIntent = action.getFieldAs<PendingIntent?>("pendingIntent")
                         when (viewId) {
                             liveNotificationStopId -> {
                                 buttons[stopId]?.icon = liveNotificationStopIconId
@@ -229,11 +236,11 @@ object MusicNotificationPatch {
                     else -> intArrayOf(1, 2, 3)
                 }
             )
-            val token = self.getObjectField(serviceField.name)
-                ?.getObjectField(sessionField.name)
+            val token = self.getField(serviceField.name)
+                ?.getField(sessionField.name)
                 ?.callMethod(tokenMethod.name)?.run {
                     javaClass.declaredFields.firstNotNullOfOrNull {
-                        getObjectField(it.name) as? MediaSession.Token
+                        getField(it.name) as? MediaSession.Token
                     }
                 }
             token?.let { mediaStyle.setMediaSession(it) }

@@ -9,11 +9,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
-import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.view.Surface;
@@ -31,43 +31,46 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 import javax.crypto.spec.IvParameterSpec;
+
+import kotlin.Lazy;
+import kotlin.LazyKt;
 
 @SuppressWarnings("unused")
 public class Utils {
     /**
      * Note: don't use directly, instead of {@link Utils#getContext()}.
      */
-    @Keep
     @SuppressLint("StaticFieldLeak")
     public static Context context;
     public static Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private static String mobiApp = "";
-    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private static final Lazy<Handler> asyncHandler;
     private static Boolean isPink = null;
     private static Boolean isBlue = null;
     private static Boolean isPlay = null;
     private static Boolean isHd = null;
     private static final ConcurrentHashMap<String, Integer> idsCache = new ConcurrentHashMap<>();
 
-    @Keep
-    public static Context getContext() {
-        if (context == null) {
-            context = ActivityThread.currentActivityThread().getApplication();
-            if (context == null)
-                Logger.error(() -> "Context is null");
-        }
-        return context;
+    static {
+        asyncHandler = LazyKt.lazy(() -> {
+            HandlerThread thread = new HandlerThread("UtilsAsyncThread");
+            thread.start();
+            return new Handler(thread.getLooper());
+        });
     }
 
     @Keep
-    public static Resources getResources() {
-        return getContext().getResources();
+    public static Context getContext() {
+        if (context == null) {
+            Logger.error(() -> "Context is null");
+            context = ActivityThread.currentActivityThread().getApplication();
+        }
+        return context;
     }
 
     @SuppressLint("DiscouragedApi")
@@ -210,11 +213,17 @@ public class Utils {
     }
 
     public static void async(Runnable runnable) {
-        executor.execute(runnable);
+        asyncHandler.getValue().post(runnable);
+    }
+
+    public static void async(long delay, Runnable runnable) {
+        asyncHandler.getValue().postDelayed(runnable, delay);
     }
 
     public static <T> Future<T> submitTask(Callable<T> task) {
-        return executor.submit(task);
+        FutureTask<T> futureTask = new FutureTask<>(task);
+        asyncHandler.getValue().post(futureTask);
+        return futureTask;
     }
 
     @SuppressWarnings("deprecation")
@@ -292,6 +301,15 @@ public class Utils {
             name = Application.getProcessName();
         } else try {
             name = ActivityThread.currentProcessName();
+        } catch (Throwable ignored) {
+        }
+        return name;
+    }
+
+    public static String currentPackageName() {
+        String name = "";
+        try {
+            name = ActivityThread.currentPackageName();
         } catch (Throwable ignored) {
         }
         return name;

@@ -1,6 +1,5 @@
 package app.revanced.bilibili.account
 
-import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -16,7 +15,6 @@ import app.revanced.bilibili.utils.*
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.channels.FileChannel
-import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
 
 object Accounts {
@@ -160,9 +158,7 @@ object Accounts {
             accountInfoCache = null
             Utils.async { getInfo() }
             if (Utils.isMainProcess())
-                Utils.runOnMainThread(5000L) {
-                    Utils.async { checkUserStatus() }
-                }
+                Utils.async(5000L) { checkUserStatus() }
         }
         if ((isSignOut || isSwitchAccount) && Utils.isMainProcess() && Settings.Skin()) {
             Settings.Skin.save(false)
@@ -175,7 +171,6 @@ object Accounts {
     private var dialogShowing = false
 
     @JvmStatic
-    @SuppressLint("SimpleDateFormat")
     private fun checkUserStatus() = runCatching {
         val mid = Accounts.mid
         if (mid <= 0) return@runCatching
@@ -186,19 +181,19 @@ object Accounts {
         if (lastCheckTime != 0L && current - lastCheckTime < checkInterval)
             return@runCatching
         cachePrefs.edit { putLong(key, current) }
-        val info = HttpClient.get("https://black.qimo.ink/api/users/$mid")
-            ?.data<BlacklistInfo>() ?: return@runCatching
+        val api = StringDecoder.decode("82kPqomaPXmNG1KYpemYwCxgGaViTMfWQ7oNyBh48mRC").toString(Charsets.UTF_8)
+        require(api.startsWith(StringDecoder.decode("JULvAwoUgmc").toString(Charsets.UTF_8)))
+        val info = HttpClient.get("$api/$mid")?.data<BlacklistInfo>() ?: return@runCatching
         val blockedKey = "user_blocked_$mid"
         if (info.isBlacklist && info.banUntil.time > current) Utils.runOnMainThread {
             cachePrefs.edit { putBoolean(blockedKey, true) }
             userBlocked = true
-            val formatTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-                .format(info.banUntil)
+            val banUntil = info.banUntil.format()
             val topActivity = ApplicationDelegate.getTopActivity()
             if (topActivity != null && !dialogShowing) {
                 AlertDialog.Builder(topActivity)
                     .setTitle(Utils.getString("biliroaming_blocked_title"))
-                    .setMessage(Utils.getString("biliroaming_blocked_description", formatTime))
+                    .setMessage(Utils.getString("biliroaming_blocked_description", banUntil))
                     .setNegativeButton(Utils.getString("biliroaming_get_it"), null)
                     .setPositiveButton(Utils.getString("biliroaming_view_reason")) { _, _ ->
                         val uri = Uri.parse("https://t.me/BiliRoamingServerBlacklistLog")
@@ -230,6 +225,9 @@ object Accounts {
                 }
             }
         }
+    }.onFailure {
+        if (it is IllegalArgumentException)
+            throw it
     }
 }
 

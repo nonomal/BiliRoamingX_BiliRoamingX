@@ -2,6 +2,7 @@ package app.revanced.bilibili.patches
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.text.SpannableStringBuilder
@@ -12,16 +13,20 @@ import android.widget.TextView
 import androidx.annotation.Keep
 import app.revanced.bilibili.http.HttpClient
 import app.revanced.bilibili.model.AIConclusion
+import app.revanced.bilibili.model.AIConclusionJudge
 import app.revanced.bilibili.patches.main.ApplicationDelegate
+import app.revanced.bilibili.patches.main.Player
 import app.revanced.bilibili.patches.main.VideoInfoHolder
 import app.revanced.bilibili.settings.Settings
 import app.revanced.bilibili.utils.*
+import app.revanced.bilibili.utils.PlayerHookProvider.seekTo
 import app.revanced.bilibili.widget.OnLongClickOriginListener
 import com.bapis.bilibili.app.viewunite.common.DescType
 import com.bapis.bilibili.app.viewunite.v1.ViewReply
 import com.bilibili.bplus.followingcard.widget.EllipsizingTextView
 import com.bilibili.bplus.im.business.model.BaseTypedMessage
 import org.json.JSONObject
+import java.lang.ref.WeakReference
 
 object CopyEnhancePatch {
     private val DYNAMIC_COPYABLE_IDS = arrayOf(
@@ -31,9 +36,19 @@ object CopyEnhancePatch {
         "dy_opus_copy_right_id",
         "dy_opus_paragraph_text"
     )
+    private val canonicalizeRegex = Regex("""([,;])\s?""")
+    private val aiConclusionAvailableCache = object : LinkedHashMap<Long, Boolean>() {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Long, Boolean>): Boolean {
+            return size > 6
+        }
+    }
+
+    private var copyDialogRef = WeakReference<Dialog>(null)
+    private var aiConclusionDialogRef = WeakReference<Dialog>(null)
 
     @Keep
     @JvmStatic
+    @Suppress("UNUSED_PARAMETER")
     fun onCopyDesc(isBv: Boolean, desc: String): Boolean {
         if (!Settings.CommentCopy()) return false
         if (!Settings.EnhanceCommentCopy()) return true
@@ -56,12 +71,17 @@ object CopyEnhancePatch {
                 }) { append("点我保存") }
                 appendLine().appendLine()
                 appendTitle("AI总结：")
-                clickable(0xFF2196F3.toInt(), onClick = {
-                    viewAiConclusion()
-                }) { append("点我查看") }
-                appendLine().appendLine()
+                val cid = VideoInfoHolder.current?.cid
+                if (cid != null && cid != 0L && aiConclusionAvailableCache[cid] == false) {
+                    appendLine("当前视频暂不支持AI总结").appendLine()
+                } else {
+                    clickable(0xFF2196F3.toInt(), onClick = {
+                        viewAiConclusion()
+                    }) { append("点我查看") }
+                    appendLine().appendLine()
+                }
                 val introDesc = view.arc.desc
-                if (desc.isNotEmpty()) {
+                if (introDesc.isNotEmpty()) {
                     appendTitle("简介：")
                     appendLine(introDesc).appendLine()
                 }
@@ -98,10 +118,15 @@ object CopyEnhancePatch {
                         }) { append("点我保存") }
                         appendLine().appendLine()
                         appendTitle("AI总结：")
-                        clickable(0xFF2196F3.toInt(), onClick = {
-                            viewAiConclusion()
-                        }) { append("点我查看") }
-                        appendLine().appendLine()
+                        val cid = VideoInfoHolder.current?.cid
+                        if (cid != null && cid != 0L && aiConclusionAvailableCache[cid] == false) {
+                            appendLine("当前视频暂不支持AI总结").appendLine()
+                        } else {
+                            clickable(0xFF2196F3.toInt(), onClick = {
+                                viewAiConclusion()
+                            }) { append("点我查看") }
+                            appendLine().appendLine()
+                        }
                         val introDesc = intro.descList.joinToString("") {
                             if (it.type == DescType.DescTypeAt) "@${it.text}" else it.text
                         }
@@ -243,6 +268,21 @@ object CopyEnhancePatch {
             setTextIsSelectable(true)
             movementMethod = LinkMovementMethod.getInstance()
         }
+        copyDialogRef = WeakReference(alertDialog)
+    }
+
+    fun judgeAiConclusion(aid: Long, mid: Long, cid: Long) {
+        if (aiConclusionAvailableCache[cid] == false)
+            return
+        Utils.async {
+            val params = Wbi.sign(mapOf("aid" to aid, "cid" to cid, "up_mid" to mid))
+            HttpClient.get(
+                "https://api.bilibili.com/x/web-interface/view/conclusion/judge",
+                params = params
+            )?.data<AIConclusionJudge>()?.let {
+                aiConclusionAvailableCache[cid] = it.available
+            }
+        }
     }
 
     private fun viewAiConclusion() {
@@ -266,36 +306,57 @@ object CopyEnhancePatch {
                 params = params
             )?.data<AIConclusion>()
             if (aiConclusion != null) Utils.runOnMainThread {
-                showAiConclusion(aiConclusion)
+                showAiConclusion(aiConclusion, cid)
             }
         }
     }
 
-    private fun showAiConclusion(aiConclusion: AIConclusion) {
+    private fun showAiConclusion(aiConclusion: AIConclusion, cid: Long) {
         if (aiConclusion.code != 0) {
-            Toasts.showShort("当前视频暂不支持AI总结")
+            if (aiConclusion.code == 1) {
+                aiConclusionAvailableCache[cid] = true
+                Toasts.showLong("当前视频由你首次尝试AI总结，系统正在处理中，请稍后再次查看是否支持AI总结。")
+            } else {
+                aiConclusionAvailableCache[cid] = false
+                Toasts.showShort("当前视频暂不支持AI总结")
+            }
             return
         }
+        aiConclusionAvailableCache[cid] = true
         val topActivity = ApplicationDelegate.getTopActivity() ?: return
         val modelResult = aiConclusion.modelResult
-        fun String.canonicalize() = replace(", ", "，")
-            .replace(',', '，')
+
+        fun String.canonicalize() = replace(canonicalizeRegex) {
+            val (_, symbol) = it.groupValues
+            when (symbol) {
+                "," -> "，"
+                ";" -> "；"
+                else -> symbol
+            }
+        }
 
         val message = buildSpannedString {
-            absoluteSize(15.sp) {
-                bold { appendLine(modelResult.summary.canonicalize()) }
+            if (modelResult.summary.isNotEmpty()) {
+                absoluteSize(15.sp) {
+                    bold { appendLine(modelResult.summary.canonicalize()) }
+                }
+                appendLine()
             }
-            appendLine()
             modelResult.outline.forEach { line ->
                 val title = line.title
                 absoluteSize(15.sp) {
                     bold { appendLine(title.canonicalize()) }
                 }
                 line.partOutline.forEach { partLine ->
-                    val timestamp = partLine.timestamp.toLong().secondFormat()
+                    val timestamp = partLine.timestamp
+                    val timestampFormat = timestamp.toLong().secondFormat()
                     val content = partLine.content
                     absoluteSize(14.sp) {
-                        color(0xFF2196F3.toInt()) { append(timestamp) }
+                        clickable(0xFF2196F3.toInt(), onClick = {
+                            copyDialogRef.get()?.dismiss()
+                            aiConclusionDialogRef.get()?.dismiss()
+                            Player.current()?.seekTo(timestamp * 1000)
+                        }) { append(timestampFormat) }
                         append(' ')
                         appendLine(content.canonicalize())
                     }
@@ -311,6 +372,8 @@ object CopyEnhancePatch {
             .apply { show() }
         (alertDialog.findViewById<TextView>(android.R.id.message)).run {
             setTextIsSelectable(true)
+            movementMethod = LinkMovementMethod.getInstance()
         }
+        aiConclusionDialogRef = WeakReference(alertDialog)
     }
 }
